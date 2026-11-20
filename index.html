@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search Parts | 559 Parts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=Questrial&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eceef6;
+    --ink: #101a5c;
+    --muted: #4a5390;
+    --card: #eceef6;
+    --btn-text: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Questrial", system-ui, sans-serif;
+    padding: 32px 24px 56px;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+
+  form.search {
+    display: flex; align-items: center; gap: 8px;
+    max-width: 780px; margin: 0 auto 36px;
+    border: 1px solid var(--muted); border-radius: 999px;
+    padding: 8px 12px 8px 22px; background: var(--bg);
+  }
+  form.search:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .field { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .field label { font-size: 12px; color: var(--muted); }
+  .field input {
+    border: 0; background: transparent; font: inherit; font-size: 18px;
+    color: var(--ink); padding: 2px 0; outline: none; width: 100%;
+  }
+  .icon-btn {
+    border: 0; background: transparent; color: var(--ink); cursor: pointer;
+    width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  }
+  .icon-btn:hover { background: rgba(16,26,92,.08); }
+  .icon-btn:focus-visible { outline: 2px solid var(--ink); }
+  .icon-btn svg { width: 20px; height: 20px; }
+  #clear[hidden] { display: none; }
+
+  .bar {
+    display: flex; justify-content: flex-end; align-items: center;
+    gap: 20px; color: var(--muted); margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .bar select {
+    font: inherit; color: var(--muted); background: transparent;
+    border: 0; border-bottom: 1px solid var(--muted); padding: 4px 6px; cursor: pointer;
+  }
+
+  .grid {
+    display: grid; gap: 28px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+  .card {
+    border: 1px solid var(--ink); border-radius: 22px; padding: 16px 16px 20px;
+    display: flex; flex-direction: column; background: var(--card);
+  }
+  .card a.media { display: block; border-radius: 6px; overflow: hidden; background: #dfe2ef; aspect-ratio: 1 / 1.15; }
+  .card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card h2 {
+    font-family: "Archivo", sans-serif; font-weight: 700; font-size: 15px;
+    line-height: 1.35; margin: 18px 0 8px; flex: 1;
+  }
+  .card h2 a { color: inherit; text-decoration: none; }
+  .card h2 a:hover { text-decoration: underline; }
+  .price { font-size: 17px; margin-bottom: 14px; }
+  .buy {
+    display: block; text-align: center; text-decoration: none;
+    background: var(--ink); color: var(--btn-text); border-radius: 999px;
+    padding: 11px 16px; font-family: "Archivo", sans-serif; font-weight: 600; font-size: 14px;
+  }
+  .buy:hover { background: #1c2a8a; }
+  .buy:focus-visible, .card a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  .status { text-align: center; color: var(--muted); padding: 48px 0; }
+  .more {
+    display: block; margin: 36px auto 0; font: inherit; cursor: pointer;
+    background: transparent; color: var(--ink); border: 1px solid var(--ink);
+    border-radius: 999px; padding: 12px 28px;
+  }
+  .more:hover { background: rgba(16,26,92,.08); }
+  .more[hidden] { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <form class="search" id="form" role="search">
+    <div class="field">
+      <label for="q">Search</label>
+      <input id="q" name="q" type="search" autocomplete="off" placeholder="Part name, part number, or vehicle">
+    </div>
+    <button type="button" class="icon-btn" id="clear" aria-label="Clear search" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <button type="submit" class="icon-btn" aria-label="Search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    </button>
+  </form>
+
+  <div class="bar">
+    <label for="sort">Sort by:</label>
+    <select id="sort">
+      <option value="relevance">Relevance</option>
+      <option value="priceAsc">Price: low to high</option>
+      <option value="priceDesc">Price: high to low</option>
+      <option value="newest">Newly listed</option>
+    </select>
+    <span id="count" aria-live="polite"></span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <p class="status" id="status" hidden></p>
+  <button class="more" id="more" hidden>Show more parts</button>
+</div>
+
+<script>
+(function () {
+  var PAGE = 24;
+  var form = document.getElementById('form');
+  var qEl = document.getElementById('q');
+  var sortEl = document.getElementById('sort');
+  var grid = document.getElementById('grid');
+  var statusEl = document.getElementById('status');
+  var countEl = document.getElementById('count');
+  var moreBtn = document.getElementById('more');
+  var clearBtn = document.getElementById('clear');
+  var offset = 0, loading = false, runId = 0;
+
+  var money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+  function sendHeight() {
+    // Lets a WordPress iframe resize itself to fit (optional)
+    try { parent.postMessage({ type: '559parts-height', height: document.documentElement.scrollHeight }, '*'); } catch (e) {}
+  }
+
+  function card(item) {
+    var el = document.createElement('article');
+    el.className = 'card';
+
+    var media = document.createElement('a');
+    media.className = 'media';
+    media.href = item.url; media.target = '_blank'; media.rel = 'noopener';
+    media.tabIndex = -1; media.setAttribute('aria-hidden', 'true');
+    if (item.image) {
+      var img = document.createElement('img');
+      img.src = item.image.replace(/s-l\d+/, 's-l500');
+      img.alt = ''; img.loading = 'lazy';
+      media.appendChild(img);
+    }
+    el.appendChild(media);
+
+    var h = document.createElement('h2');
+    var a = document.createElement('a');
+    a.href = item.url; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = item.title;
+    h.appendChild(a);
+    el.appendChild(h);
+
+    var p = document.createElement('div');
+    p.className = 'price';
+    p.textContent = item.price == null ? '' : money.format(item.price) + ' ' + (item.currency || 'USD');
+    el.appendChild(p);
+
+    var buy = document.createElement('a');
+    buy.className = 'buy';
+    buy.href = item.url; buy.target = '_blank'; buy.rel = 'noopener';
+    buy.textContent = 'Buy now on eBay';
+    el.appendChild(buy);
+    return el;
+  }
+
+  function setStatus(msg) {
+    statusEl.hidden = !msg;
+    statusEl.textContent = msg || '';
+  }
+
+  async function load(reset) {
+    if (loading) return;
+    loading = true;
+    var myRun = ++runId;
+    if (reset) { offset = 0; grid.innerHTML = ''; moreBtn.hidden = true; countEl.textContent = ''; }
+    setStatus('Loading parts...');
+
+    var params = new URLSearchParams({
+      q: qEl.value.trim(), sort: sortEl.value, limit: PAGE, offset: offset
+    });
+    try {
+      var res = await fetch('/api/search?' + params);
+      if (!res.ok) throw new Error('bad status');
+      var data = await res.json();
+      if (myRun !== runId) return;
+
+      data.items.forEach(function (i) { grid.appendChild(card(i)); });
+      offset += data.items.length;
+      countEl.textContent = data.total.toLocaleString() + ' result' + (data.total === 1 ? '' : 's');
+      moreBtn.hidden = !data.hasMore;
+      setStatus(data.items.length === 0 && offset === 0
+        ? 'No parts found. Try a part number or fewer words.' : '');
+    } catch (e) {
+      setStatus('Search is unavailable right now. Please try again in a moment.');
+    } finally {
+      loading = false;
+      sendHeight();
+    }
+  }
+
+  function syncUrl() {
+    var u = new URL(location.href);
+    if (qEl.value.trim()) u.searchParams.set('q', qEl.value.trim()); else u.searchParams.delete('q');
+    history.replaceState(null, '', u);
+    clearBtn.hidden = !qEl.value;
+  }
+
+  form.addEventListener('submit', function (e) { e.preventDefault(); syncUrl(); load(true); });
+  sortEl.addEventListener('change', function () { load(true); });
+  moreBtn.addEventListener('click', function () { load(false); });
+  qEl.addEventListener('input', function () { clearBtn.hidden = !qEl.value; });
+  clearBtn.addEventListener('click', function () { qEl.value = ''; syncUrl(); qEl.focus(); load(true); });
+
+  qEl.value = new URLSearchParams(location.search).get('q') || '';
+  clearBtn.hidden = !qEl.value;
+  load(true);
+})();
+</script>
+</body>
+</html>
